@@ -31,16 +31,13 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">K</span>
-          </div>
+        <Link href="/home" className="flex items-center gap-2">
           <span
             className={`font-bold text-lg transition-colors ${
               scrolled ? "text-gray-900" : "text-white"
             }`}
           >
-            Kada
+            GhadiHours
           </span>
         </Link>
 

@@ -143,7 +143,7 @@ function ConfirmationContent() {
               Track your order
             </button>
           </Link>
-          <Link href="/">
+          <Link href="/home">
             <button className="w-full h-13 border-2 border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-500 rounded-2xl font-semibold text-sm transition-colors">
               Continue browsing
             </button>
@@ -162,7 +162,7 @@ function ConfirmationContent() {
               </button>
             </Link>
             <span className="text-gray-300">|</span>
-            <Link href="/">
+            <Link href="/home">
               <button className="text-gray-400 text-sm hover:text-gray-600">
                 No thanks
               </button>

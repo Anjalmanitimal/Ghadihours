@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,7 +11,9 @@ import {
   BatteryCharging,
   UserRound,
 } from "lucide-react";
+import { AxiosError } from "axios";
 import { loginUser, guestLogin } from "@/lib/api";
+import WatchVisual from "@/components/ui/WatchVisual";
 
 const FEATURES = [
   { icon: ShieldCheck, label: "Precision biometric tracking" },
@@ -26,6 +28,11 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    setRegistered(new URLSearchParams(window.location.search).has("registered"));
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +42,11 @@ export default function LoginPage() {
       const res = await loginUser(email, password);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data));
-      router.push("/");
-    } catch {
-      setError("Invalid email or password. Please try again.");
+      router.push("/home");
+    } catch (err) {
+      const message =
+        err instanceof AxiosError ? err.response?.data?.message : undefined;
+      setError(message || "Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -46,12 +55,14 @@ export default function LoginPage() {
   const handleGuest = async () => {
     setLoading(true);
     try {
-      const res = await guestLogin(email || "guest@kada.com", "Guest");
+      const res = await guestLogin(email || "guest@ghadihours.com", "Guest");
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data));
       router.push("/checkout");
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      const message =
+        err instanceof AxiosError ? err.response?.data?.message : undefined;
+      setError(message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -71,22 +82,8 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex-1 flex flex-col justify-center text-left max-w-sm mx-auto">
           {/* Watch visual */}
-          <div className="w-56 h-56 mb-10 relative">
-            <div className="w-full h-full rounded-[40px] bg-gradient-to-br from-[#161c40] to-black border border-white/10 flex items-center justify-center shadow-2xl">
-              <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 p-[3px] shadow-xl">
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-800 to-black flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-white text-xl font-light">10:09</div>
-                    <div className="text-gray-400 text-[10px] mt-1 tracking-widest">
-                      GHADI
-                    </div>
-                  </div>
-                </div>
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-gray-400 rounded-t-md" />
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-gray-400 rounded-b-md" />
-              </div>
-            </div>
-            <div className="absolute inset-0 -z-10 bg-blue-500/20 rounded-full blur-3xl scale-150" />
+          <div className="mb-10 flex justify-center">
+            <WatchVisual size="md" />
           </div>
 
           <h2 className="text-3xl font-bold text-white mb-4">
@@ -136,6 +133,13 @@ export default function LoginPage() {
               Create account
             </Link>
           </div>
+
+          {/* Registered successfully */}
+          {registered && !error && (
+            <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl mb-6">
+              Account created — please sign in.
+            </div>
+          )}
 
           {/* Error */}
           {error && (
