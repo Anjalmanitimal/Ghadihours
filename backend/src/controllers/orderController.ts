@@ -23,38 +23,51 @@ export const createOrder = async (
 ): Promise<void> => {
   try {
     const {
-      configuration,
-      quantity,
+      items,
       deliveryDetails,
       paymentMethod,
       isGuestOrder,
       guestEmail,
     } = req.body;
 
-    // find product and verify variant stock
+    if (!Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ success: false, message: "No items to order" });
+      return;
+    }
+
+    // find product and verify stock for every line item
     const product = await Product.findOne();
     if (!product) {
       res.status(404).json({ success: false, message: "Product not found" });
       return;
     }
 
-    const variant = product.variants.find(
-      (v) =>
-        v.caseColor === configuration.caseColor &&
-        v.strapColor === configuration.strapColor &&
-        v.size === configuration.size
-    );
+    const variants = items.map((item) => {
+      const variant = product.variants.find(
+        (v) =>
+          v.caseColor === item.caseColor &&
+          v.strapColor === item.strapColor &&
+          v.size === item.size
+      );
+      return { item, variant };
+    });
 
-    if (!variant || variant.stock < quantity) {
+    const outOfStock = variants.find(
+      ({ item, variant }) => !variant || variant.stock < item.quantity
+    );
+    if (outOfStock) {
       res.status(400).json({
         success: false,
-        message: "Selected variant is out of stock",
+        message: `${outOfStock.item.caseColor} / ${outOfStock.item.strapColor} / ${outOfStock.item.size} is out of stock`,
       });
       return;
     }
 
     // calculate pricing — no hidden fees
-    const subtotal = product.price * quantity;
+    const subtotal = items.reduce(
+      (sum: number, item: { quantity: number }) => sum + product.price * item.quantity,
+      0
+    );
     const shipping = product.freeShipping ? 0 : 500;
     const tax = Math.round(subtotal * 0.13); // 13% VAT Nepal
     const total = subtotal + shipping + tax;
@@ -64,8 +77,7 @@ export const createOrder = async (
       user: isGuestOrder ? null : req.user?._id,
       guestEmail: isGuestOrder ? guestEmail : null,
       isGuestOrder,
-      configuration,
-      quantity,
+      items: items.map((item) => ({ ...item, price: product.price })),
       deliveryDetails,
       pricing: { subtotal, shipping, tax, total },
       paymentMethod,
@@ -74,8 +86,10 @@ export const createOrder = async (
       estimatedDeliveryDate: getEstimatedDelivery(),
     });
 
-    // reduce stock
-    variant.stock -= quantity;
+    // reduce stock per variant
+    variants.forEach(({ item, variant }) => {
+      variant!.stock -= item.quantity;
+    });
     await product.save();
 
     res.status(201).json({ success: true, data: order });

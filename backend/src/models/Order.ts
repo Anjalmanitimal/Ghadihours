@@ -9,10 +9,12 @@ export interface IDeliveryDetails {
   country: string;
 }
 
-export interface IConfiguration {
+export interface IOrderItem {
   caseColor: string;
   strapColor: string;
   size: string;
+  quantity: number;
+  price: number;
 }
 
 export interface IPricing {
@@ -27,8 +29,7 @@ export interface IOrder extends Document {
   user?: mongoose.Types.ObjectId;
   guestEmail?: string;
   isGuestOrder: boolean;
-  configuration: IConfiguration;
-  quantity: number;
+  items: IOrderItem[];
   deliveryDetails: IDeliveryDetails;
   pricing: IPricing;
   paymentMethod: "card" | "esewa" | "khalti";
@@ -37,6 +38,17 @@ export interface IOrder extends Document {
   estimatedDeliveryDate: Date;
 }
 
+const orderItemSchema = new Schema<IOrderItem>(
+  {
+    caseColor: { type: String, required: true },
+    strapColor: { type: String, required: true },
+    size: { type: String, required: true },
+    quantity: { type: Number, required: true, default: 1 },
+    price: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
 const orderSchema = new Schema<IOrder>(
   {
     orderNumber: { type: String, required: true, unique: true },
@@ -44,12 +56,7 @@ const orderSchema = new Schema<IOrder>(
     guestEmail: { type: String },
     isGuestOrder: { type: Boolean, default: false },
 
-    configuration: {
-      caseColor: { type: String, required: true },
-      strapColor: { type: String, required: true },
-      size: { type: String, required: true },
-    },
-    quantity: { type: Number, default: 1 },
+    items: { type: [orderItemSchema], required: true },
 
     deliveryDetails: {
       fullName: { type: String, required: true },

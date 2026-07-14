@@ -48,6 +48,14 @@ export interface IConfiguration {
   size: string;
 }
 
+export interface IOrderItem {
+  caseColor: string;
+  strapColor: string;
+  size: string;
+  quantity: number;
+  price: number;
+}
+
 export interface IDeliveryDetails {
   fullName: string;
   email: string;
@@ -67,8 +75,7 @@ export interface IPricing {
 export interface IOrder {
   _id: string;
   orderNumber: string;
-  configuration: IConfiguration;
-  quantity: number;
+  items: IOrderItem[];
   deliveryDetails: IDeliveryDetails;
   pricing: IPricing;
   paymentMethod: "card" | "esewa" | "khalti";
@@ -107,8 +114,7 @@ export interface ICart {
 }
 
 export interface ICreateOrderPayload {
-  configuration: IConfiguration;
-  quantity: number;
+  items: { caseColor: string; strapColor: string; size: string; quantity: number }[];
   deliveryDetails: IDeliveryDetails;
   paymentMethod: "card" | "esewa" | "khalti";
   isGuestOrder: boolean;

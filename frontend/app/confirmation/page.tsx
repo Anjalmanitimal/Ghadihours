@@ -7,6 +7,8 @@ import { fetchOrderByNumber } from "@/lib/api";
 import { IOrder } from "@/types";
 import { CheckCircle, Package, Truck, Calendar, Mail } from "lucide-react";
 import { Suspense } from "react";
+import { caseColors, strapColors } from "@/lib/productOptions";
+import WatchVisual from "@/components/ui/WatchVisual";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
@@ -76,22 +78,34 @@ function ConfirmationContent() {
               </span>
             </div>
 
-            {/* Product */}
-            <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-              <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-xs font-light">10:09</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-gray-900">GhadiHours</p>
-                <p className="text-gray-400 text-sm mt-0.5">
-                  {order.configuration.caseColor} ·{" "}
-                  {order.configuration.strapColor} strap ·{" "}
-                  {order.configuration.size}
-                </p>
-                <p className="text-blue-500 font-semibold text-sm mt-1">
-                  NPR {order.pricing.total.toLocaleString()}
-                </p>
-              </div>
+            {/* Products */}
+            <div className="flex flex-col gap-4 mb-6 pb-6 border-b border-gray-100">
+              {order.items.map((item, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                    <div style={{ transform: "scale(0.33)" }}>
+                      <WatchVisual
+                        size="sm"
+                        caseColor={caseColors.find((c) => c.label === item.caseColor)?.hex}
+                        strapColor={strapColors.find((s) => s.label === item.strapColor)?.hex}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-900">GhadiHours</p>
+                    <p className="text-gray-400 text-sm mt-0.5">
+                      {item.caseColor} · {item.strapColor} strap · {item.size} ·
+                      Qty {item.quantity}
+                    </p>
+                  </div>
+                  <p className="text-gray-700 font-semibold text-sm">
+                    NPR {(item.price * item.quantity).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+              <p className="text-blue-500 font-bold text-sm text-right pt-2">
+                Total: NPR {order.pricing.total.toLocaleString()}
+              </p>
             </div>
 
             {/* Delivery info */}

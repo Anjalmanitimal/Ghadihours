@@ -6,21 +6,7 @@ import { fetchProduct, addToCart, guestLogin } from "@/lib/api";
 import { IProduct } from "@/types";
 import { ShoppingBag, Save, Shield, Truck, RotateCcw, Check, Minus, Plus } from "lucide-react";
 import WatchVisual from "@/components/ui/WatchVisual";
-
-const caseColors = [
-  { label: "Midnight Black", hex: "#1f2937" },
-  { label: "Silver Aluminium", hex: "#d1d5db" },
-  { label: "Rose Gold", hex: "#f9a8d4" },
-];
-
-const strapColors = [
-  { label: "Black", hex: "#1f2937" },
-  { label: "Beige", hex: "#f5f0e8" },
-  { label: "Navy", hex: "#1e3a5f" },
-  { label: "Red", hex: "#dc2626" },
-];
-
-const sizes = ["40mm", "44mm"];
+import { caseColors, strapColors, sizes } from "@/lib/productOptions";
 
 export default function CustomisePage() {
   const router = useRouter();

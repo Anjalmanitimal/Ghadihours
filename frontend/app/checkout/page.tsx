@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Shield, Truck, RotateCcw, ChevronRight, User, Package } from "lucide-react";
-import { fetchProduct, createOrder, guestLogin } from "@/lib/api";
-import { IProduct, IDeliveryDetails } from "@/types";
+import { AxiosError } from "axios";
+import { fetchProduct, fetchCart, createOrder, guestLogin, clearCart } from "@/lib/api";
+import { IProduct, IDeliveryDetails, ICartItem } from "@/types";
+import { caseColors, strapColors } from "@/lib/productOptions";
+import WatchVisual from "@/components/ui/WatchVisual";
 
 const steps = ["Details", "Payment", "Confirm"];
 
@@ -17,11 +20,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
-  const [config, setConfig] = useState({
-    caseColor: "Midnight Black",
-    strapColor: "Black",
-    size: "44mm",
-  });
+  const [cartItems, setCartItems] = useState<ICartItem[]>([]);
+  const [fromCart, setFromCart] = useState(false);
 
   const [form, setForm] = useState<IDeliveryDetails>({
     fullName: "",
@@ -42,11 +42,6 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    const savedConfig = localStorage.getItem("watchConfig");
-    if (savedConfig) {
-      setConfig(JSON.parse(savedConfig));
-    }
-
     const user = localStorage.getItem("user");
     if (user) {
       const parsed = JSON.parse(user);
@@ -57,10 +52,37 @@ export default function CheckoutPage() {
       }));
     }
 
-    fetchProduct()
-      .then(setProduct)
-      .catch(console.error)
-      .finally(() => setPageLoading(false));
+    const loadCart = async () => {
+      if (localStorage.getItem("token")) {
+        try {
+          const cart = await fetchCart();
+          if (cart.items.length > 0) {
+            setCartItems(cart.items);
+            setFromCart(true);
+            return;
+          }
+        } catch {
+          // fall through to the default single-item flow below
+        }
+      }
+      // no cart / empty cart — e.g. "Buy Now — Skip to Checkout" from the
+      // pricing section, which doesn't go through the cart at all
+      setCartItems([
+        {
+          _id: "default",
+          caseColor: "Midnight Black",
+          strapColor: "Black",
+          size: "44mm",
+          quantity: 1,
+          price: 0,
+        },
+      ]);
+    };
+
+    Promise.all([
+      loadCart(),
+      fetchProduct().then(setProduct).catch(console.error),
+    ]).finally(() => setPageLoading(false));
   }, []);
 
   const handleFormChange = (
@@ -109,26 +131,38 @@ export default function CheckoutPage() {
       const parsedUser = user ? JSON.parse(user) : null;
 
       const order = await createOrder({
-        configuration: config,
-        quantity: 1,
+        items: cartItems.map((item) => ({
+          caseColor: item.caseColor,
+          strapColor: item.strapColor,
+          size: item.size,
+          quantity: item.quantity,
+        })),
         deliveryDetails: form,
         paymentMethod,
         isGuestOrder: parsedUser?.isGuest || !token,
         guestEmail: form.email,
       });
 
-      // clear config after order
-      localStorage.removeItem("watchConfig");
+      // clean up — the ordered items shouldn't linger in the cart
+      if (fromCart) {
+        await clearCart().catch(() => {});
+        window.dispatchEvent(new Event("cart:updated"));
+      }
       router.push(`/confirmation?order=${order.orderNumber}`);
     } catch (error) {
       console.error("Order failed:", error);
-      alert("Something went wrong. Please try again.");
+      const message =
+        error instanceof AxiosError
+          ? error.response?.data?.message
+          : undefined;
+      alert(message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const subtotal = product?.price || 32000;
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = (product?.price || 32000) * totalQuantity;
   const shipping = 0;
   const tax = Math.round(subtotal * 0.13);
   const total = subtotal + shipping + tax;
@@ -501,22 +535,38 @@ export default function CheckoutPage() {
                 <h3 className="font-bold text-gray-900">Order summary</h3>
               </div>
 
-              {/* Watch preview mini */}
-              <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-light">10:09</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">
-                    GhadiHours
-                  </p>
-                  <p className="text-gray-400 text-xs mt-0.5">
-                    {config.caseColor}
-                  </p>
-                  <p className="text-gray-400 text-xs">
-                    {config.strapColor} strap · {config.size}
-                  </p>
-                </div>
+              {/* Watch preview — one card per cart item, not collapsed into one */}
+              <div className="flex flex-col gap-3 mb-6">
+                {cartItems.map((item) => (
+                  <div
+                    key={item._id}
+                    className="bg-gray-50 rounded-2xl p-4 flex items-center gap-4"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                      <div style={{ transform: "scale(0.29)" }}>
+                        <WatchVisual
+                          size="sm"
+                          caseColor={caseColors.find((c) => c.label === item.caseColor)?.hex}
+                          strapColor={strapColors.find((s) => s.label === item.strapColor)?.hex}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900 text-sm">
+                        GhadiHours
+                      </p>
+                      <p className="text-gray-400 text-xs mt-0.5">
+                        {item.caseColor}
+                      </p>
+                      <p className="text-gray-400 text-xs">
+                        {item.strapColor} strap · {item.size} · Qty {item.quantity}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-gray-900 text-sm">
+                      NPR {((product?.price || 0) * item.quantity).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               {/* Pricing — Law of Proximity: all costs grouped */}

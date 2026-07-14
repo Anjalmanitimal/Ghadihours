@@ -13,6 +13,8 @@ import {
   LogOut,
   ChevronRight,
 } from "lucide-react";
+import { caseColors, strapColors } from "@/lib/productOptions";
+import WatchVisual from "@/components/ui/WatchVisual";
 
 const orderSteps = [
   "Order Placed",
@@ -183,23 +185,32 @@ export default function OrdersPage() {
                           </span>
                         </div>
 
-                        {/* Product */}
-                        <div className="flex items-center gap-4 mb-6">
-                          <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-xs">10:09</span>
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900 text-sm">
-                              GhadiHours
-                            </p>
-                            <p className="text-gray-400 text-xs mt-0.5">
-                              {order.configuration.caseColor} ·{" "}
-                              {order.configuration.strapColor} strap ·{" "}
-                              {order.configuration.size}
-                            </p>
-                          </div>
-                          <p className="font-bold text-gray-900 text-sm">
-                            NPR {order.pricing.total.toLocaleString()}
+                        {/* Products */}
+                        <div className="flex flex-col gap-3 mb-6">
+                          {order.items.map((item, i) => (
+                            <div key={i} className="flex items-center gap-4">
+                              <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                                <div style={{ transform: "scale(0.29)" }}>
+                                  <WatchVisual
+                                    size="sm"
+                                    caseColor={caseColors.find((c) => c.label === item.caseColor)?.hex}
+                                    strapColor={strapColors.find((s) => s.label === item.strapColor)?.hex}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold text-gray-900 text-sm">
+                                  GhadiHours
+                                </p>
+                                <p className="text-gray-400 text-xs mt-0.5">
+                                  {item.caseColor} · {item.strapColor} strap ·{" "}
+                                  {item.size} · Qty {item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                          <p className="font-bold text-gray-900 text-sm text-right">
+                            Total: NPR {order.pricing.total.toLocaleString()}
                           </p>
                         </div>
 

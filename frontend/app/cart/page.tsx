@@ -54,16 +54,6 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     if (items.length === 0) return;
-    // bridge to the existing single-item checkout flow
-    const first = items[0];
-    localStorage.setItem(
-      "watchConfig",
-      JSON.stringify({
-        caseColor: first.caseColor,
-        strapColor: first.strapColor,
-        size: first.size,
-      })
-    );
     router.push("/checkout");
   };
 
