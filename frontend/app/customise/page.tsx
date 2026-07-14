@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchProduct } from "@/lib/api";
+import { fetchProduct, addToCart, guestLogin } from "@/lib/api";
 import { IProduct } from "@/types";
-import { ShoppingBag, Save, Shield, Truck, RotateCcw } from "lucide-react";
+import { ShoppingBag, Save, Shield, Truck, RotateCcw, Check, Minus, Plus } from "lucide-react";
+import WatchVisual from "@/components/ui/WatchVisual";
 
 const caseColors = [
   { label: "Midnight Black", hex: "#1f2937" },
@@ -27,8 +28,10 @@ export default function CustomisePage() {
   const [selectedCase, setSelectedCase] = useState("Midnight Black");
   const [selectedStrap, setSelectedStrap] = useState("Black");
   const [selectedSize, setSelectedSize] = useState("44mm");
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
     // restore saved config if exists
@@ -38,6 +41,7 @@ export default function CustomisePage() {
       setSelectedCase(config.caseColor || "Midnight Black");
       setSelectedStrap(config.strapColor || "Black");
       setSelectedSize(config.size || "44mm");
+      setQuantity(config.quantity || 1);
     }
 
     fetchProduct()
@@ -53,22 +57,30 @@ export default function CustomisePage() {
         caseColor: selectedCase,
         strapColor: selectedStrap,
         size: selectedSize,
+        quantity,
       })
     );
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleAddToCart = () => {
-    localStorage.setItem(
-      "watchConfig",
-      JSON.stringify({
-        caseColor: selectedCase,
-        strapColor: selectedStrap,
-        size: selectedSize,
-      })
-    );
-    router.push("/checkout");
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    try {
+      if (!localStorage.getItem("token")) {
+        const res = await guestLogin("guest@ghadihours.com", "Guest");
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data));
+      }
+      await addToCart(selectedCase, selectedStrap, selectedSize, quantity);
+      window.dispatchEvent(new Event("cart:updated"));
+      router.push("/cart");
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't add to cart. Please try again.");
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const currentCase = caseColors.find((c) => c.label === selectedCase);
@@ -101,64 +113,13 @@ export default function CustomisePage() {
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
 
-          {/* Left — watch preview */}
+          {/* Left — live-recoloring preview */}
           <div className="sticky top-28">
-            <div className="relative flex items-center justify-center">
-              {/* Watch body */}
-              <div className="relative">
-                {/* Strap top */}
-                <div
-                  className="w-16 h-16 rounded-t-xl mx-auto"
-                  style={{ backgroundColor: currentStrap?.hex }}
-                />
-
-                {/* Watch case */}
-                <div
-                  className="w-56 h-56 rounded-[40px] flex items-center justify-center shadow-2xl border-4 border-white relative z-10"
-                  style={{ backgroundColor: currentCase?.hex }}
-                >
-                  <div
-                    className="w-40 h-40 rounded-[28px] flex items-center justify-center"
-                    style={{
-                      backgroundColor:
-                        selectedCase === "Silver Aluminium"
-                          ? "#f9fafb"
-                          : "#111827",
-                    }}
-                  >
-                    <div className="text-center">
-                      <div
-                        className={`text-2xl font-light ${
-                          selectedCase === "Silver Aluminium"
-                            ? "text-gray-900"
-                            : "text-white"
-                        }`}
-                      >
-                        10:09
-                      </div>
-                      <div className="text-gray-400 text-xs mt-1">
-                        MON 10 JUL
-                      </div>
-                      <div className="flex justify-center gap-3 mt-2">
-                        <span className="text-red-400 text-xs">❤ 72</span>
-                        <span className="text-blue-400 text-xs">⚡ 94%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Strap bottom */}
-                <div
-                  className="w-16 h-16 rounded-b-xl mx-auto"
-                  style={{ backgroundColor: currentStrap?.hex }}
-                />
-              </div>
-
-              {/* Glow */}
-              <div
-                className="absolute inset-0 -z-10 rounded-full blur-3xl opacity-20 scale-75"
-                style={{ backgroundColor: currentCase?.hex }}
-              />
+            <div className="relative flex flex-col items-center justify-center py-8 gap-4">
+              <WatchVisual size="lg" caseColor={currentCase?.hex} strapColor={currentStrap?.hex} />
+              <p className="text-gray-400 text-xs">
+                Illustration — actual finish may vary
+              </p>
             </div>
 
             {/* Current config summary */}
@@ -179,10 +140,14 @@ export default function CustomisePage() {
                   <span className="text-gray-500">Size</span>
                   <span className="font-medium text-gray-900">{selectedSize}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Quantity</span>
+                  <span className="font-medium text-gray-900">{quantity}</span>
+                </div>
                 <div className="flex justify-between pt-3 border-t border-gray-200 mt-2">
                   <span className="text-gray-500">Price</span>
                   <span className="font-bold text-gray-900 text-lg">
-                    NPR {product?.price.toLocaleString()}
+                    NPR {((product?.price || 0) * quantity).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -222,7 +187,7 @@ export default function CustomisePage() {
                       {c.label}
                     </span>
                     {selectedCase === c.label && (
-                      <span className="ml-auto text-blue-500 text-lg">✓</span>
+                      <Check size={18} className="ml-auto text-blue-500" />
                     )}
                   </button>
                 ))}
@@ -290,6 +255,33 @@ export default function CustomisePage() {
               </p>
             </div>
 
+            {/* Quantity */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Quantity
+              </h3>
+              <div className="flex items-center gap-4">
+                {/* Fitts's Law: min 44px touch target */}
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  className="w-11 h-11 rounded-2xl border-2 border-gray-200 text-gray-700 hover:border-gray-300 disabled:opacity-40 disabled:hover:border-gray-200 flex items-center justify-center transition-all"
+                >
+                  <Minus size={18} />
+                </button>
+                <span className="w-10 text-center font-bold text-lg text-gray-900">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity((q) => Math.min(10, q + 1))}
+                  disabled={quantity >= 10}
+                  className="w-11 h-11 rounded-2xl border-2 border-gray-200 text-gray-700 hover:border-gray-300 disabled:opacity-40 disabled:hover:border-gray-200 flex items-center justify-center transition-all"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+            </div>
+
             {/* Trust indicators — Law of Proximity */}
             <div className="flex gap-6 text-sm text-green-600 flex-wrap">
               <span className="flex items-center gap-1">
@@ -307,17 +299,20 @@ export default function CustomisePage() {
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleAddToCart}
-                className="w-full h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-bold text-lg transition-colors flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20"
+                disabled={addingToCart}
+                className="w-full h-14 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white rounded-2xl font-bold text-lg transition-colors flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20"
               >
                 <ShoppingBag size={20} />
-                Add to Cart — NPR {product?.price.toLocaleString()}
+                {addingToCart
+                  ? "Adding..."
+                  : `Add to Cart — NPR ${((product?.price || 0) * quantity).toLocaleString()}`}
               </button>
               <button
                 onClick={saveConfig}
                 className="w-full h-14 border-2 border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-500 rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
               >
-                <Save size={16} />
-                {saved ? "✓ Configuration saved!" : "Save configuration"}
+                {saved ? <Check size={16} /> : <Save size={16} />}
+                {saved ? "Configuration saved!" : "Save configuration"}
               </button>
             </div>
 

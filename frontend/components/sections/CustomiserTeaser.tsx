@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 const CustomiserTeaser = () => {
   return (
-    <section className="py-24 px-6 bg-[#0B1340]">
+    <section id="customise" className="py-24 px-6 bg-[#0B1340]">
       <div className="max-w-4xl mx-auto text-center">
         <p className="text-cyan-400 text-sm font-semibold uppercase tracking-widest mb-4">
           Customise
@@ -33,8 +34,9 @@ const CustomiserTeaser = () => {
         </div>
 
         <Link href="/customise">
-          <button className="bg-blue-500 hover:bg-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg shadow-blue-500/30">
-            Build your watch →
+          <button className="bg-blue-500 hover:bg-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg shadow-blue-500/30 inline-flex items-center gap-2">
+            Build your watch
+            <ArrowRight size={20} />
           </button>
         </Link>
       </div>

@@ -1,29 +1,31 @@
 "use client";
 
+import Image from "next/image";
+
 const features = [
   {
-    icon: "❤️",
+    image: "/knowyourheart.png",
     title: "Know your heart.",
     body: "Real-time heart rate, ECG and SpO2 monitoring. Not just numbers — insights that help you act.",
     benefitTag: "Catch irregular patterns early.",
     reverse: false,
   },
   {
-    icon: "😴",
+    image: "/sleeping.png",
     title: "Sleep smarter.",
     body: "Advanced sleep stage tracking tells you not just how long you slept — but how well.",
     benefitTag: "Wake up actually rested.",
     reverse: true,
   },
   {
-    icon: "🏃",
+    image: "/running.png",
     title: "Train with data, not guesswork.",
     body: "Built-in GPS, VO2 max tracking, and automatic workout detection.",
     benefitTag: "Push harder. Recover smarter.",
     reverse: false,
   },
   {
-    icon: "🔋",
+    image: "/charge.png",
     title: "Charge once. Last the week.",
     body: "Up to 7-day battery life. Because your life doesn't stop, your watch shouldn't either.",
     benefitTag: "Less charging. More living.",
@@ -33,7 +35,7 @@ const features = [
 
 const FeaturesSection = () => {
   return (
-    <section id="features" className="py-24 px-6">
+    <section id="features" className="py-24 px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
           <p className="text-blue-500 text-sm font-semibold uppercase tracking-widest mb-4">
@@ -42,7 +44,7 @@ const FeaturesSection = () => {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
             Everything you need.
             <br />
-            Nothing you don't.
+            Nothing you don&apos;t.
           </h2>
         </div>
 
@@ -57,8 +59,14 @@ const FeaturesSection = () => {
             >
               {/* Visual */}
               <div className={feat.reverse ? "lg:order-2" : ""}>
-                <div className="w-full aspect-square max-w-sm mx-auto bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-center">
-                  <span className="text-8xl">{feat.icon}</span>
+                <div className="relative w-full aspect-square max-w-sm mx-auto rounded-3xl border border-gray-100 overflow-hidden">
+                  <Image
+                    src={feat.image}
+                    alt={feat.title}
+                    fill
+                    sizes="(max-width: 768px) 90vw, 384px"
+                    className="object-cover"
+                  />
                 </div>
               </div>
 

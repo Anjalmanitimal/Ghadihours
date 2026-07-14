@@ -1,13 +1,53 @@
 const TICKS = Array.from({ length: 12 });
 
-const WatchVisual = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
+interface WatchVisualProps {
+  size?: "sm" | "md" | "lg";
+  caseColor?: string;
+  strapColor?: string;
+}
+
+const WatchVisual = ({ size = "md", caseColor, strapColor }: WatchVisualProps) => {
   const box = size === "lg" ? "w-72 h-72" : size === "sm" ? "w-48 h-48" : "w-56 h-56";
   const face = size === "lg" ? "w-44 h-44" : size === "sm" ? "w-28 h-28" : "w-32 h-32";
 
+  // Derive light/dark tones from the picked color itself (rather than
+  // fading toward unrelated black) so every colorway gets natural-looking
+  // metallic shading instead of muddying into gray.
+  const caseGradient = caseColor
+    ? `linear-gradient(135deg, color-mix(in srgb, ${caseColor} 55%, white), ${caseColor} 45%, color-mix(in srgb, ${caseColor} 75%, black))`
+    : undefined;
+  const bezelGradient = caseColor
+    ? `linear-gradient(160deg, color-mix(in srgb, ${caseColor} 45%, white), ${caseColor}, color-mix(in srgb, ${caseColor} 55%, black))`
+    : undefined;
+  const strapGradient = strapColor
+    ? `linear-gradient(180deg, color-mix(in srgb, ${strapColor} 60%, white), ${strapColor} 50%, color-mix(in srgb, ${strapColor} 70%, black))`
+    : undefined;
+
   return (
     <div className={`${box} relative`}>
-      <div className="w-full h-full rounded-[40px] bg-gradient-to-br from-[#161c40] to-black border border-white/10 flex items-center justify-center shadow-2xl">
-        <div className={`relative ${face} rounded-full bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 p-[3px] shadow-xl`}>
+      <div
+        className={`relative w-full h-full rounded-[40px] border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden ${
+          caseColor ? "" : "bg-gradient-to-br from-[#161c40] to-black"
+        }`}
+        style={caseColor ? { background: caseGradient } : undefined}
+      >
+        {/* glass highlight — reads as a light reflection on any case color */}
+        {caseColor && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at 28% 20%, rgba(255,255,255,0.35), transparent 55%)",
+            }}
+          />
+        )}
+
+        <div
+          className={`relative ${face} rounded-full p-[3px] shadow-xl ${
+            caseColor ? "" : "bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500"
+          }`}
+          style={caseColor ? { background: bezelGradient } : undefined}
+        >
           <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-800 to-black flex items-center justify-center relative overflow-hidden">
             {TICKS.map((_, i) => (
               <span
@@ -31,11 +71,32 @@ const WatchVisual = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
               21
             </span>
           </div>
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-gray-400 rounded-t-md" />
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-gray-400 rounded-b-md" />
+          <div
+            className={`absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-3 rounded-t-md overflow-hidden ${
+              strapColor ? "" : "bg-gray-400"
+            }`}
+            style={strapColor ? { background: strapGradient } : undefined}
+          >
+            {strapColor && (
+              <div className="w-full h-full bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.12)_0px,rgba(0,0,0,0.12)_1px,transparent_1px,transparent_4px)]" />
+            )}
+          </div>
+          <div
+            className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-3 rounded-b-md overflow-hidden ${
+              strapColor ? "" : "bg-gray-400"
+            }`}
+            style={strapColor ? { background: strapGradient } : undefined}
+          >
+            {strapColor && (
+              <div className="w-full h-full bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.12)_0px,rgba(0,0,0,0.12)_1px,transparent_1px,transparent_4px)]" />
+            )}
+          </div>
         </div>
       </div>
-      <div className="absolute inset-0 -z-10 bg-blue-500/20 rounded-full blur-3xl scale-150" />
+      <div
+        className="absolute inset-0 -z-10 rounded-full blur-3xl scale-150"
+        style={{ backgroundColor: caseColor ? `${caseColor}33` : "rgba(59,130,246,0.2)" }}
+      />
     </div>
   );
 };

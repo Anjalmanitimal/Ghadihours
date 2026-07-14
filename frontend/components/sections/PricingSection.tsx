@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { ShieldCheck, Truck, RotateCcw, Lock } from "lucide-react";
 
+const TRUST_ITEMS = [
+  { icon: Truck, label: "Free shipping" },
+  { icon: Lock, label: "Secure payment" },
+  { icon: ShieldCheck, label: "1 year warranty" },
+  { icon: RotateCcw, label: "30-day returns" },
+];
+
 const PricingSection = () => {
   return (
     <section id="pricing" className="py-24 px-6 bg-white">
@@ -12,24 +19,8 @@ const PricingSection = () => {
         {/* Price */}
         <div className="text-6xl font-bold text-gray-900 mb-2">NPR 32,000</div>
 
-        {/* Trust indicators — Law of Proximity: grouped tight */}
-        <div className="flex items-center justify-center gap-6 text-sm text-green-600 font-medium mb-10 flex-wrap">
-          <span className="flex items-center gap-1">
-            <Truck size={14} />
-            Free shipping
-          </span>
-          <span className="flex items-center gap-1">
-            <ShieldCheck size={14} />
-            1 year warranty
-          </span>
-          <span className="flex items-center gap-1">
-            <RotateCcw size={14} />
-            30-day returns
-          </span>
-        </div>
-
         {/* CTAs — Hick's Law: only 2 choices */}
-        <div className="flex flex-col gap-4 mb-10">
+        <div className="flex flex-col gap-4 mb-10 mt-8">
           <Link href="/customise">
             <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-blue-500/20">
               Customise & Add to Cart
@@ -42,20 +33,14 @@ const PricingSection = () => {
           </Link>
         </div>
 
-        {/* Trust badges */}
-        <div className="flex justify-center gap-8 text-gray-400">
-          <div className="flex flex-col items-center gap-2">
-            <Lock size={20} />
-            <span className="text-xs">Secure payment</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <RotateCcw size={20} />
-            <span className="text-xs">30-day returns</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <ShieldCheck size={20} />
-            <span className="text-xs">1 year warranty</span>
-          </div>
+        {/* Trust badges — single set, no repetition (Occam's Razor) */}
+        <div className="flex justify-center gap-8 text-gray-400 flex-wrap">
+          {TRUST_ITEMS.map(({ icon: Icon, label }) => (
+            <div key={label} className="flex flex-col items-center gap-2">
+              <Icon size={20} />
+              <span className="text-xs">{label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

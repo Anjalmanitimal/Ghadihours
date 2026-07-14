@@ -91,6 +91,21 @@ export interface IAuthResponse {
   data: IUser;
 }
 
+export interface ICartItem {
+  _id: string;
+  caseColor: string;
+  strapColor: string;
+  size: string;
+  quantity: number;
+  price: number;
+}
+
+export interface ICart {
+  _id: string;
+  user: string;
+  items: ICartItem[];
+}
+
 export interface ICreateOrderPayload {
   configuration: IConfiguration;
   quantity: number;

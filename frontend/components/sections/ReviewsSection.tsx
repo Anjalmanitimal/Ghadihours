@@ -3,14 +3,18 @@
 import { useEffect, useState } from "react";
 import { fetchReviews } from "@/lib/api";
 import { IReview } from "@/types";
-import { Star, ShieldCheck } from "lucide-react";
+import { Star, ShieldCheck, ThumbsUp } from "lucide-react";
 
 const ReviewsSection = () => {
   const [reviews, setReviews] = useState<IReview[]>([]);
   const [filter, setFilter] = useState<string>("All");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchReviews().then(setReviews).catch(console.error);
+    fetchReviews()
+      .then(setReviews)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered =
@@ -68,6 +72,7 @@ const ReviewsSection = () => {
         </div>
 
         {/* Review cards */}
+        {!loading && filtered.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.slice(0, 6).map((review) => (
             <div
@@ -116,12 +121,33 @@ const ReviewsSection = () => {
               </p>
 
               {/* Helpful count */}
-              <p className="text-gray-400 text-xs">
-                👍 {review.helpfulCount} people found this helpful
+              <p className="flex items-center gap-1.5 text-gray-400 text-xs">
+                <ThumbsUp size={12} />
+                {review.helpfulCount} people found this helpful
               </p>
             </div>
           ))}
         </div>
+        )}
+
+        {/* Loading skeleton — Doherty Threshold: acknowledge activity immediately */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl p-6 border border-gray-100 h-48 animate-pulse"
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && filtered.length === 0 && (
+          <p className="text-center text-gray-400 text-sm">
+            No reviews in this category yet.
+          </p>
+        )}
       </div>
     </section>
   );

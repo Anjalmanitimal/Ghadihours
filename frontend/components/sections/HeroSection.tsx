@@ -1,7 +1,17 @@
 import Link from "next/link";
-import WatchVisual from "@/components/ui/WatchVisual";
+import WatchPhoto from "@/components/ui/WatchPhoto";
+import SectionDots from "@/components/ui/SectionDots";
 
-const sections = ["hero", "story", "product", "features", "reviews", "pricing"];
+const sections = [
+  "hero",
+  "story",
+  "product",
+  "features",
+  "customise",
+  "reviews",
+  "compare",
+  "pricing",
+];
 
 const HeroSection = () => {
   return (
@@ -15,18 +25,8 @@ const HeroSection = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-cyan-400/10 rounded-full blur-2xl" />
       </div>
 
-      {/* Dot progress indicator */}
-      <div className="fixed right-8 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-3">
-        {sections.map((sec, i) => (
-          <a
-            key={sec}
-            href={`#${sec}`}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              i === 0 ? "bg-blue-500 scale-125" : "bg-white/30 hover:bg-white/60"
-            }`}
-          />
-        ))}
-      </div>
+      {/* Dot progress indicator — Zeigarnik effect: shows position in an unfinished sequence */}
+      <SectionDots sections={sections} />
 
       <div className="relative z-10 max-w-3xl mx-auto">
         {/* Eyebrow */}
@@ -36,7 +36,7 @@ const HeroSection = () => {
 
         {/* Watch visual */}
         <div className="mx-auto mb-10 flex justify-center">
-          <WatchVisual size="lg" />
+          <WatchPhoto size="lg" />
         </div>
 
         {/* Headline */}

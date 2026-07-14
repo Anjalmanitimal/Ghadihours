@@ -190,7 +190,7 @@ export default function OrdersPage() {
                           </div>
                           <div className="flex-1">
                             <p className="font-semibold text-gray-900 text-sm">
-                              Kada Smart Watch
+                              GhadiHours
                             </p>
                             <p className="text-gray-400 text-xs mt-0.5">
                               {order.configuration.caseColor} ·{" "}

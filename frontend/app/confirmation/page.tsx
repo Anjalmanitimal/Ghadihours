@@ -82,7 +82,7 @@ function ConfirmationContent() {
                 <span className="text-white text-xs font-light">10:09</span>
               </div>
               <div className="flex-1">
-                <p className="font-bold text-gray-900">Kada Smart Watch</p>
+                <p className="font-bold text-gray-900">GhadiHours</p>
                 <p className="text-gray-400 text-sm mt-0.5">
                   {order.configuration.caseColor} ·{" "}
                   {order.configuration.strapColor} strap ·{" "}

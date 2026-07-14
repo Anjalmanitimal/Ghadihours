@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { AxiosError } from "axios";
 import { registerUser } from "@/lib/api";
-import WatchVisual from "@/components/ui/WatchVisual";
+import WatchPhoto from "@/components/ui/WatchPhoto";
 
 const FEATURES = [
   { icon: ShieldCheck, label: "Precision biometric tracking" },
@@ -84,7 +84,7 @@ export default function RegisterPage() {
         <div className="relative z-10 flex-1 flex flex-col justify-center text-left max-w-sm mx-auto">
           {/* Watch visual */}
           <div className="mb-10 flex justify-center">
-            <WatchVisual size="md" />
+            <WatchPhoto size="md" />
           </div>
 
           <h2 className="text-3xl font-bold text-white mb-4">

@@ -5,6 +5,7 @@ import {
   IOrder,
   IAuthResponse,
   ICreateOrderPayload,
+  ICart,
 } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -86,5 +87,39 @@ export const fetchOrderByNumber = async (
 
 export const fetchMyOrders = async (): Promise<IOrder[]> => {
   const res = await api.get("/orders/my-orders");
+  return res.data.data;
+};
+
+// ── Cart ─────────────────────────────────────────────────────────────────────
+export const fetchCart = async (): Promise<ICart> => {
+  const res = await api.get("/cart");
+  return res.data.data;
+};
+
+export const addToCart = async (
+  caseColor: string,
+  strapColor: string,
+  size: string,
+  quantity = 1
+): Promise<ICart> => {
+  const res = await api.post("/cart", { caseColor, strapColor, size, quantity });
+  return res.data.data;
+};
+
+export const updateCartItem = async (
+  itemId: string,
+  quantity: number
+): Promise<ICart> => {
+  const res = await api.put(`/cart/${itemId}`, { quantity });
+  return res.data.data;
+};
+
+export const removeCartItem = async (itemId: string): Promise<ICart> => {
+  const res = await api.delete(`/cart/${itemId}`);
+  return res.data.data;
+};
+
+export const clearCart = async (): Promise<ICart> => {
+  const res = await api.delete("/cart");
   return res.data.data;
 };

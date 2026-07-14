@@ -1,3 +1,13 @@
+import { Heart, Moon, MapPin, Droplet } from "lucide-react";
+import WatchPhoto from "@/components/ui/WatchPhoto";
+
+const PILLS = [
+  { icon: Heart, label: "Heart Rate" },
+  { icon: Moon, label: "Sleep Tracking" },
+  { icon: MapPin, label: "GPS" },
+  { icon: Droplet, label: "5ATM Water Resistant" },
+];
+
 const ProductIntroSection = () => {
   return (
     <section
@@ -9,14 +19,9 @@ const ProductIntroSection = () => {
           Introducing
         </p>
 
-        {/* Watch visual */}
-        <div className="w-48 h-48 mx-auto mb-12 relative">
-          <div className="w-full h-full rounded-[36px] bg-gradient-to-br from-gray-700 to-gray-900 border border-white/10 flex items-center justify-center shadow-2xl">
-            <div className="w-32 h-32 rounded-[24px] bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
-              <div className="text-white text-xl font-light">10:09</div>
-            </div>
-          </div>
-          <div className="absolute inset-0 -z-10 bg-cyan-400/20 rounded-full blur-3xl scale-150" />
+        {/* Product photo — shared component (Jakob's Law: consistent with hero/login/register) */}
+        <div className="mb-12 flex justify-center">
+          <WatchPhoto size="md" />
         </div>
 
         <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
@@ -32,18 +37,13 @@ const ProductIntroSection = () => {
 
         {/* Feature pills — Miller's Law: exactly 4 */}
         <div className="flex flex-wrap justify-center gap-3">
-          {[
-            { icon: "❤️", label: "Heart Rate" },
-            { icon: "😴", label: "Sleep Tracking" },
-            { icon: "📍", label: "GPS" },
-            { icon: "💧", label: "5ATM Water Resistant" },
-          ].map((feat) => (
+          {PILLS.map(({ icon: Icon, label }) => (
             <span
-              key={feat.label}
+              key={label}
               className="bg-white/10 border border-blue-500/30 text-white text-sm px-5 py-2.5 rounded-full flex items-center gap-2"
             >
-              <span>{feat.icon}</span>
-              <span>{feat.label}</span>
+              <Icon size={16} className="text-blue-400" />
+              <span>{label}</span>
             </span>
           ))}
         </div>
