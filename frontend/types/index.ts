@@ -108,9 +108,13 @@ export interface ICustomer {
   _id: string;
   name: string;
   email: string;
+  phone: string | null;
+  isGuest: boolean;
   createdAt: string;
   orderCount: number;
   totalSpent: number;
+  lastOrderStatus: string | null;
+  lastOrderNumber: string | null;
 }
 
 export interface IAuthResponse {

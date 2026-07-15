@@ -47,33 +47,65 @@ export const getAllOrders = async (
   }
 };
 
-// @desc  All customers with their order count
+// @desc  All customers (registered + guest) with order count and most recent order
 // @route GET /api/admin/customers
 export const getAllCustomers = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const users = await User.find({ isGuest: false })
-      .select("-password")
-      .sort({ createdAt: -1 });
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
 
-    const orderCounts = await Order.aggregate([
-      { $match: { user: { $ne: null } } },
-      { $group: { _id: "$user", count: { $sum: 1 }, totalSpent: { $sum: "$pricing.total" } } },
+    // registered-user orders are linked via `user`; guest orders are stored
+    // anonymously (user: null) and only traceable via guestEmail — so both
+    // need their own aggregation, sorted newest-first so $first is the latest.
+    const [byUser, byGuestEmail] = await Promise.all([
+      Order.aggregate([
+        { $match: { user: { $ne: null } } },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: "$user",
+            count: { $sum: 1 },
+            totalSpent: { $sum: "$pricing.total" },
+            lastOrderStatus: { $first: "$orderStatus" },
+            lastOrderNumber: { $first: "$orderNumber" },
+          },
+        },
+      ]),
+      Order.aggregate([
+        { $match: { isGuestOrder: true, guestEmail: { $ne: null } } },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: "$guestEmail",
+            count: { $sum: 1 },
+            totalSpent: { $sum: "$pricing.total" },
+            lastOrderStatus: { $first: "$orderStatus" },
+            lastOrderNumber: { $first: "$orderNumber" },
+          },
+        },
+      ]),
     ]);
-    const countByUser = new Map(
-      orderCounts.map((o) => [o._id.toString(), { count: o.count, totalSpent: o.totalSpent }])
-    );
 
-    const customers = users.map((u) => ({
-      _id: u._id,
-      name: u.name,
-      email: u.email,
-      createdAt: u.get("createdAt"),
-      orderCount: countByUser.get(u._id.toString())?.count || 0,
-      totalSpent: countByUser.get(u._id.toString())?.totalSpent || 0,
-    }));
+    const byUserMap = new Map(byUser.map((o) => [o._id.toString(), o]));
+    const byEmailMap = new Map(byGuestEmail.map((o) => [o._id, o]));
+
+    const customers = users.map((u) => {
+      const stats = byUserMap.get(u._id.toString()) || byEmailMap.get(u.email);
+      return {
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone || null,
+        isGuest: u.isGuest,
+        createdAt: u.get("createdAt"),
+        orderCount: stats?.count || 0,
+        totalSpent: stats?.totalSpent || 0,
+        lastOrderStatus: stats?.lastOrderStatus || null,
+        lastOrderNumber: stats?.lastOrderNumber || null,
+      };
+    });
 
     res.json({ success: true, count: customers.length, data: customers });
   } catch (error) {

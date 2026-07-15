@@ -85,6 +85,9 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     if (!ready) return;
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearch(q);
+
     fetchAllOrders()
       .then((data) => {
         setOrders(data);
