@@ -39,6 +39,19 @@ export const protect = async (
   }
 };
 
+// blocks requests from non-admin users — always use after `protect`
+export const requireAdmin = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user?.isAdmin) {
+    res.status(403).json({ success: false, message: "Admin access required" });
+    return;
+  }
+  next();
+};
+
 // allows guests through but attaches user if token exists
 export const optionalAuth = async (
   req: AuthRequest,

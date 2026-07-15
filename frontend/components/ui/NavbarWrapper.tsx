@@ -10,7 +10,7 @@ const flowRoutes = ["/customise", "/cart", "/checkout", "/confirmation", "/order
 const NavbarWrapper = () => {
   const pathname = usePathname();
 
-  if (hideOn.includes(pathname)) return null;
+  if (hideOn.includes(pathname) || pathname.startsWith("/admin")) return null;
   if (flowRoutes.includes(pathname)) return <FlowNavbar />;
 
   return <Navbar />;

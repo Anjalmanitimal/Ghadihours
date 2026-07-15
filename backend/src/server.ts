@@ -19,12 +19,14 @@ import productRoutes from "./routes/productRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import cartRoutes from "./routes/cartRoutes";
+import adminRoutes from "./routes/adminRoutes";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Health check
 app.get("/api/health", (req: Request, res: Response) => {

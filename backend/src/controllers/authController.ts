@@ -29,6 +29,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        isAdmin: user.isAdmin,
         token: generateToken(user._id.toString()),
       },
     });
@@ -56,6 +57,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         name: user.name,
         email: user.email,
         isGuest: user.isGuest,
+        isAdmin: user.isAdmin,
         token: generateToken(user._id.toString()),
       },
     });

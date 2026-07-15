@@ -13,6 +13,7 @@ export interface IUser extends Document {
   password: string;
   phone?: string;
   isGuest: boolean;
+  isAdmin: boolean;
   savedConfiguration?: ISavedConfig;
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
@@ -24,6 +25,7 @@ const userSchema = new Schema<IUser>(
     password: { type: String, required: true },
     phone: { type: String },
     isGuest: { type: Boolean, default: false },
+    isAdmin: { type: Boolean, default: false },
     savedConfiguration: {
       caseColor: String,
       strapColor: String,

@@ -90,7 +90,25 @@ export interface IUser {
   name: string;
   email: string;
   isGuest: boolean;
+  isAdmin: boolean;
   token: string;
+}
+
+export interface IAdminStats {
+  totalOrders: number;
+  pending: number;
+  shipped: number;
+  delivered: number;
+  revenue: number;
+}
+
+export interface ICustomer {
+  _id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  orderCount: number;
+  totalSpent: number;
 }
 
 export interface IAuthResponse {

@@ -8,7 +8,7 @@ const FooterWrapper = () => {
 
   const hideOn = ["/login", "/register"];
 
-  if (hideOn.includes(pathname)) return null;
+  if (hideOn.includes(pathname) || pathname.startsWith("/admin")) return null;
 
   return <Footer />;
 };

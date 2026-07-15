@@ -6,6 +6,8 @@ import {
   IAuthResponse,
   ICreateOrderPayload,
   ICart,
+  IAdminStats,
+  ICustomer,
 } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -121,5 +123,29 @@ export const removeCartItem = async (itemId: string): Promise<ICart> => {
 
 export const clearCart = async (): Promise<ICart> => {
   const res = await api.delete("/cart");
+  return res.data.data;
+};
+
+// ── Admin ────────────────────────────────────────────────────────────────────
+export const fetchAdminStats = async (): Promise<IAdminStats> => {
+  const res = await api.get("/admin/stats");
+  return res.data.data;
+};
+
+export const fetchAllOrders = async (): Promise<IOrder[]> => {
+  const res = await api.get("/admin/orders");
+  return res.data.data;
+};
+
+export const fetchAllCustomers = async (): Promise<ICustomer[]> => {
+  const res = await api.get("/admin/customers");
+  return res.data.data;
+};
+
+export const updateOrderStatus = async (
+  orderNumber: string,
+  orderStatus: string
+): Promise<IOrder> => {
+  const res = await api.put(`/orders/${orderNumber}/status`, { orderStatus });
   return res.data.data;
 };

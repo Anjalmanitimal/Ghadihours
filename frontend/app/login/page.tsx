@@ -42,7 +42,7 @@ export default function LoginPage() {
       const res = await loginUser(email, password);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data));
-      router.push("/home");
+      router.push(res.data.isAdmin ? "/admin" : "/home");
     } catch (err) {
       const message =
         err instanceof AxiosError ? err.response?.data?.message : undefined;
