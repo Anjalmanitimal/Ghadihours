@@ -76,6 +76,8 @@ export interface IOrder {
   _id: string;
   orderNumber: string;
   items: IOrderItem[];
+  isGuestOrder: boolean;
+  guestEmail?: string;
   deliveryDetails: IDeliveryDetails;
   pricing: IPricing;
   paymentMethod: "card" | "esewa" | "khalti";
