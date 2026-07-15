@@ -66,18 +66,28 @@ export const seedProduct = async (
           icon: "battery",
         },
       ],
-      variants: [
-        { caseColor: "Midnight Black", strapColor: "Black",  size: "40mm", stock: 50 },
-        { caseColor: "Midnight Black", strapColor: "Black",  size: "44mm", stock: 50 },
-        { caseColor: "Midnight Black", strapColor: "Navy",   size: "40mm", stock: 40 },
-        { caseColor: "Midnight Black", strapColor: "Navy",   size: "44mm", stock: 40 },
-        { caseColor: "Midnight Black", strapColor: "Red",    size: "40mm", stock: 30 },
-        { caseColor: "Midnight Black", strapColor: "Beige",  size: "44mm", stock: 30 },
-        { caseColor: "Silver Aluminium", strapColor: "Black",  size: "40mm", stock: 45 },
-        { caseColor: "Silver Aluminium", strapColor: "Beige",  size: "44mm", stock: 35 },
-        { caseColor: "Rose Gold", strapColor: "Beige", size: "40mm", stock: 25 },
-        { caseColor: "Rose Gold", strapColor: "Red",   size: "44mm", stock: 20 },
-      ],
+      // every case × strap × size combination the customizer can produce
+      // must have a stock record here, or ordering it will fail
+      variants: (() => {
+        const cases = ["Midnight Black", "Silver Aluminium", "Rose Gold"];
+        const straps = ["Black", "Beige", "Navy", "Red"];
+        const sizes = ["40mm", "44mm"];
+        const stockByCase: Record<string, number> = {
+          "Midnight Black": 50,
+          "Silver Aluminium": 40,
+          "Rose Gold": 25,
+        };
+        return cases.flatMap((caseColor) =>
+          straps.flatMap((strapColor) =>
+            sizes.map((size) => ({
+              caseColor,
+              strapColor,
+              size,
+              stock: stockByCase[caseColor],
+            }))
+          )
+        );
+      })(),
       waterResistance: "5ATM",
       batteryLife: "Up to 7 days",
       warrantyMonths: 12,
