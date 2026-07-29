@@ -93,6 +93,7 @@ export interface IUser {
   name: string;
   email: string;
   phone?: string;
+  avatar?: string;
   isGuest: boolean;
   isAdmin: boolean;
   token: string;
@@ -137,6 +138,20 @@ export interface ICart {
   _id: string;
   user: string;
   items: ICartItem[];
+}
+
+export interface IWishlistItem {
+  _id: string;
+  caseColor: string;
+  strapColor: string;
+  size: string;
+  price: number;
+}
+
+export interface IWishlist {
+  _id: string;
+  user: string;
+  items: IWishlistItem[];
 }
 
 export interface ICreateOrderPayload {

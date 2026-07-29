@@ -115,6 +115,53 @@ export const getMe = async (
   }
 };
 
+// @desc  Update current user's profile (name, phone, avatar)
+// @route PUT /api/auth/profile
+export const updateProfile = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { name, phone, avatar } = req.body;
+
+    const update: { name: string; phone: string; avatar?: string } = { name, phone };
+    if (avatar !== undefined) update.avatar = avatar;
+
+    const user = await User.findByIdAndUpdate(req.user?._id, update, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};
+
+// @desc  Change current user's password
+// @route PUT /api/auth/password
+export const changePassword = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user?._id);
+    if (!user || !(await user.matchPassword(currentPassword))) {
+      res.status(401).json({ success: false, message: "Current password is incorrect" });
+      return;
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};
+
 // @desc  Save watch configuration to user profile
 // @route PUT /api/auth/save-config
 export const saveConfig = async (

@@ -12,6 +12,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   phone?: string;
+  avatar?: string;
   isGuest: boolean;
   isAdmin: boolean;
   savedConfiguration?: ISavedConfig;
@@ -24,6 +25,7 @@ const userSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
     phone: { type: String },
+    avatar: { type: String },
     isGuest: { type: Boolean, default: false },
     isAdmin: { type: Boolean, default: false },
     savedConfiguration: {

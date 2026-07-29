@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AxiosError } from "axios";
-import { fetchMyOrders, updateProfile, changePassword } from "@/lib/api";
-import { IOrder } from "@/types";
+import {
+  fetchMyOrders,
+  updateProfile,
+  changePassword,
+  fetchWishlist,
+  addToCart,
+  removeFromWishlist,
+} from "@/lib/api";
+import { IOrder, IWishlistItem } from "@/types";
 import {
   Package,
   Heart,
@@ -14,6 +21,9 @@ import {
   LogOut,
   ChevronRight,
   Download,
+  ShoppingBag,
+  Trash2,
+  Camera,
 } from "lucide-react";
 import { caseColors, strapColors } from "@/lib/productOptions";
 import WatchVisual from "@/components/ui/WatchVisual";
@@ -34,7 +44,10 @@ export default function OrdersPage() {
     name: string;
     email: string;
     phone?: string;
+    avatar?: string;
   } | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profileForm, setProfileForm] = useState({ name: "", phone: "" });
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
@@ -48,6 +61,9 @@ export default function OrdersPage() {
     text: string;
     ok: boolean;
   } | null>(null);
+  const [wishlist, setWishlist] = useState<IWishlistItem[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
+  const [movingId, setMovingId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -66,7 +82,95 @@ export default function OrdersPage() {
       .then(setOrders)
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    fetchWishlist()
+      .then((w) => setWishlist(w.items))
+      .catch(console.error)
+      .finally(() => setWishlistLoading(false));
   }, [router]);
+
+  const resizeImageToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Couldn't read file"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Couldn't load image"));
+        img.onload = () => {
+          const size = 200;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Canvas not supported"));
+            return;
+          }
+          // cover-crop to a square
+          const scale = Math.max(size / img.width, size / img.height);
+          const w = img.width * scale;
+          const h = img.height * scale;
+          ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Please choose an image file.");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file);
+      const res = await updateProfile(
+        user?.name || "",
+        user?.phone || "",
+        dataUrl
+      );
+      const updatedUser = { ...user, ...res.data };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't update your photo. Please try again.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveFromWishlist = async (itemId: string) => {
+    try {
+      const updated = await removeFromWishlist(itemId);
+      setWishlist(updated.items);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMoveToCart = async (item: IWishlistItem) => {
+    setMovingId(item._id);
+    try {
+      await addToCart(item.caseColor, item.strapColor, item.size, 1);
+      window.dispatchEvent(new Event("cart:updated"));
+      await removeFromWishlist(item._id);
+      setWishlist((w) => w.filter((i) => i._id !== item._id));
+      router.push("/cart");
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't move this to cart. Please try again.");
+    } finally {
+      setMovingId(null);
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!profileForm.name.trim()) {
@@ -216,11 +320,41 @@ export default function OrdersPage() {
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
               {/* User info */}
               <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-100">
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-lg">
-                    {user?.name?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="relative w-12 h-12 rounded-full flex-shrink-0 group"
+                  title="Change photo"
+                >
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Camera size={16} className="text-white" />
+                  </div>
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
                 <div>
                   <p className="font-bold text-gray-900 text-sm">
                     {user?.name}
@@ -426,20 +560,72 @@ export default function OrdersPage() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   Wishlist
                 </h2>
-                <div className="bg-white rounded-3xl p-16 text-center shadow-sm border border-gray-100">
-                  <Heart size={48} className="text-gray-200 mx-auto mb-4" />
-                  <p className="text-gray-500 font-medium mb-2">
-                    Your wishlist is empty
-                  </p>
-                  <p className="text-gray-400 text-sm mb-6">
-                    Save your watch configuration to find it here
-                  </p>
-                  <Link href="/customise">
-                    <button className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold text-sm transition-colors">
-                      Go back to the store
-                    </button>
-                  </Link>
-                </div>
+
+                {wishlistLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : wishlist.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-16 text-center shadow-sm border border-gray-100">
+                    <Heart size={48} className="text-gray-200 mx-auto mb-4" />
+                    <p className="text-gray-500 font-medium mb-2">
+                      Your wishlist is empty
+                    </p>
+                    <p className="text-gray-400 text-sm mb-6">
+                      Save your watch configuration to find it here
+                    </p>
+                    <Link href="/customise">
+                      <button className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold text-sm transition-colors">
+                        Go back to the store
+                      </button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {wishlist.map((item) => (
+                      <div
+                        key={item._id}
+                        className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center gap-4"
+                      >
+                        <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                          <div style={{ transform: "scale(0.34)" }}>
+                            <WatchVisual
+                              size="sm"
+                              caseColor={caseColors.find((c) => c.label === item.caseColor)?.hex}
+                              strapColor={strapColors.find((s) => s.label === item.strapColor)?.hex}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 text-sm">
+                            GhadiHours
+                          </p>
+                          <p className="text-gray-400 text-xs mt-0.5">
+                            {item.caseColor} · {item.strapColor} strap · {item.size}
+                          </p>
+                          <p className="font-bold text-gray-900 text-sm mt-1">
+                            NPR {item.price.toLocaleString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleMoveToCart(item)}
+                          disabled={movingId === item._id}
+                          className="flex items-center gap-2 h-11 px-4 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white rounded-xl font-semibold text-sm transition-colors"
+                        >
+                          <ShoppingBag size={16} />
+                          {movingId === item._id ? "Moving..." : "Move to Cart"}
+                        </button>
+                        <button
+                          onClick={() => handleRemoveFromWishlist(item._id)}
+                          className="w-11 h-11 flex items-center justify-center rounded-xl border-2 border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors"
+                          aria-label="Remove from wishlist"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

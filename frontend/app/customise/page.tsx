@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchProduct, addToCart, guestLogin } from "@/lib/api";
+import { fetchProduct, addToCart, guestLogin, addToWishlist } from "@/lib/api";
 import { IProduct } from "@/types";
-import { ShoppingBag, Save, Shield, Truck, RotateCcw, Check, Minus, Plus } from "lucide-react";
+import { ShoppingBag, Save, Heart, Shield, Truck, RotateCcw, Check, Minus, Plus } from "lucide-react";
 import WatchVisual from "@/components/ui/WatchVisual";
 import { caseColors, strapColors, sizes } from "@/lib/productOptions";
 
@@ -18,6 +18,8 @@ export default function CustomisePage() {
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [wishlisting, setWishlisting] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
 
   useEffect(() => {
     // restore saved config if exists
@@ -48,6 +50,25 @@ export default function CustomisePage() {
     );
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleAddToWishlist = async () => {
+    setWishlisting(true);
+    try {
+      if (!localStorage.getItem("token")) {
+        const res = await guestLogin("guest@ghadihours.com", "Guest");
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data));
+      }
+      await addToWishlist(selectedCase, selectedStrap, selectedSize);
+      setWishlisted(true);
+      setTimeout(() => setWishlisted(false), 2000);
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't add to wishlist. Please try again.");
+    } finally {
+      setWishlisting(false);
+    }
   };
 
   const handleAddToCart = async () => {
@@ -293,13 +314,23 @@ export default function CustomisePage() {
                   ? "Adding..."
                   : `Add to Cart — NPR ${((product?.price || 0) * quantity).toLocaleString()}`}
               </button>
-              <button
-                onClick={saveConfig}
-                className="w-full h-14 border-2 border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-500 rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
-              >
-                {saved ? <Check size={16} /> : <Save size={16} />}
-                {saved ? "Configuration saved!" : "Save configuration"}
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={saveConfig}
+                  className="h-14 border-2 border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-500 rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  {saved ? <Check size={16} /> : <Save size={16} />}
+                  {saved ? "Saved!" : "Save configuration"}
+                </button>
+                <button
+                  onClick={handleAddToWishlist}
+                  disabled={wishlisting}
+                  className="h-14 border-2 border-gray-200 hover:border-red-300 text-gray-700 hover:text-red-500 disabled:opacity-60 rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <Heart size={16} className={wishlisted ? "fill-red-500 text-red-500" : ""} />
+                  {wishlisted ? "Added!" : wishlisting ? "Adding..." : "Add to Wishlist"}
+                </button>
+              </div>
             </div>
 
             {/* Specs */}

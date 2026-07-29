@@ -6,6 +6,7 @@ import {
   IAuthResponse,
   ICreateOrderPayload,
   ICart,
+  IWishlist,
   IAdminStats,
   ICustomer,
 } from "@/types";
@@ -83,9 +84,10 @@ export const getMe = async (): Promise<IAuthResponse> => {
 
 export const updateProfile = async (
   name: string,
-  phone?: string
+  phone?: string,
+  avatar?: string
 ): Promise<IAuthResponse> => {
-  const res = await api.put("/auth/profile", { name, phone });
+  const res = await api.put("/auth/profile", { name, phone, avatar });
   return res.data;
 };
 
@@ -148,6 +150,26 @@ export const removeCartItem = async (itemId: string): Promise<ICart> => {
 
 export const clearCart = async (): Promise<ICart> => {
   const res = await api.delete("/cart");
+  return res.data.data;
+};
+
+// ── Wishlist ─────────────────────────────────────────────────────────────────
+export const fetchWishlist = async (): Promise<IWishlist> => {
+  const res = await api.get("/wishlist");
+  return res.data.data;
+};
+
+export const addToWishlist = async (
+  caseColor: string,
+  strapColor: string,
+  size: string
+): Promise<IWishlist> => {
+  const res = await api.post("/wishlist", { caseColor, strapColor, size });
+  return res.data.data;
+};
+
+export const removeFromWishlist = async (itemId: string): Promise<IWishlist> => {
+  const res = await api.delete(`/wishlist/${itemId}`);
   return res.data.data;
 };
 

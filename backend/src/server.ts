@@ -10,8 +10,8 @@ const app: Application = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // Routes
 import authRoutes from "./routes/authRoutes";
@@ -20,6 +20,7 @@ import orderRoutes from "./routes/orderRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import adminRoutes from "./routes/adminRoutes";
+import wishlistRoutes from "./routes/wishlistRoutes";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
@@ -27,6 +28,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 
 // Health check
 app.get("/api/health", (req: Request, res: Response) => {
