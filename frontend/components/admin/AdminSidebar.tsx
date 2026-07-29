@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutGrid, ShoppingCart, Users, LogOut } from "lucide-react";
+import { LayoutGrid, ShoppingCart, Users, Star, LogOut } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutGrid },
   { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { label: "Customers", href: "/admin/customers", icon: Users },
+  { label: "Reviews", href: "/admin/reviews", icon: Star },
 ];
 
 const AdminSidebar = () => {

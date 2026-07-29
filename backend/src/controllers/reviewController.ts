@@ -1,16 +1,61 @@
 import { Request, Response } from "express";
 import Review from "../models/Review";
 import Product from "../models/Product";
+import Order from "../models/Order";
+import { AuthRequest } from "../middleware/authMiddleware";
 
-// @desc  Get all reviews
+// @desc  Get approved reviews — public store display
 // @route GET /api/reviews
 export const getReviews = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const reviews = await Review.find().sort({ helpfulCount: -1 });
+    const reviews = await Review.find({ status: "approved" }).sort({ helpfulCount: -1 });
     res.json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};
+
+// @desc  Submit a review — one per user per product, starts pending moderation
+// @route POST /api/reviews
+export const createReview = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { rating, useCase, text } = req.body;
+
+    const product = await Product.findOne();
+    if (!product) {
+      res.status(404).json({ success: false, message: "Product not found" });
+      return;
+    }
+
+    const existing = await Review.findOne({ user: req.user?._id, product: product._id });
+    if (existing) {
+      res.status(400).json({
+        success: false,
+        message: "You've already reviewed this product.",
+      });
+      return;
+    }
+
+    const hasPurchased = await Order.exists({ user: req.user?._id });
+
+    const review = await Review.create({
+      product: product._id,
+      user: req.user?._id,
+      reviewerName: req.user?.name,
+      rating,
+      useCase,
+      text,
+      verifiedPurchase: !!hasPurchased,
+      status: "pending",
+    });
+
+    res.status(201).json({ success: true, data: review });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }

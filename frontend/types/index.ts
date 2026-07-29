@@ -33,12 +33,13 @@ export interface IProduct {
 export interface IReview {
   _id: string;
   reviewerName: string;
-  location: string;
+  location?: string;
   rating: number;
   useCase: "Fitness" | "Daily Use" | "Gift";
   text: string;
   verifiedPurchase: boolean;
   helpfulCount: number;
+  status: "pending" | "approved" | "hidden";
   createdAt: string;
 }
 

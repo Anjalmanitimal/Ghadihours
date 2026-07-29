@@ -1,4 +1,5 @@
-import { Frown, Smile, XCircle, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { XCircle, CheckCircle2 } from "lucide-react";
 
 const BeforeAfterSection = () => {
   return (
@@ -20,8 +21,14 @@ const BeforeAfterSection = () => {
             <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">
               Before
             </div>
-            <div className="w-full aspect-video bg-gray-100 rounded-2xl flex items-center justify-center mb-8">
-              <Frown size={56} className="text-gray-300" />
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8">
+              <Image
+                src="/mansitting.png"
+                alt="Stressed and unaware of health patterns"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
             </div>
             <ul className="flex flex-col gap-3">
               {[
@@ -42,8 +49,14 @@ const BeforeAfterSection = () => {
             <div className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-6">
               After
             </div>
-            <div className="w-full aspect-video bg-blue-100 rounded-2xl flex items-center justify-center mb-8">
-              <Smile size={56} className="text-blue-400" />
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8">
+              <Image
+                src="/running.png"
+                alt="Energised and in control with real-time health data"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
             </div>
             <ul className="flex flex-col gap-3">
               {[

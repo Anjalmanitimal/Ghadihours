@@ -40,6 +40,15 @@ export const fetchReviews = async (): Promise<IReview[]> => {
   return res.data.data;
 };
 
+export const createReview = async (
+  rating: number,
+  useCase: "Fitness" | "Daily Use" | "Gift",
+  text: string
+): Promise<IReview> => {
+  const res = await api.post("/reviews", { rating, useCase, text });
+  return res.data.data;
+};
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 export const registerUser = async (
   name: string,
@@ -147,5 +156,18 @@ export const updateOrderStatus = async (
   orderStatus: string
 ): Promise<IOrder> => {
   const res = await api.put(`/orders/${orderNumber}/status`, { orderStatus });
+  return res.data.data;
+};
+
+export const fetchAllReviews = async (): Promise<IReview[]> => {
+  const res = await api.get("/admin/reviews");
+  return res.data.data;
+};
+
+export const updateReview = async (
+  id: string,
+  changes: { status?: string; verifiedPurchase?: boolean }
+): Promise<IReview> => {
+  const res = await api.put(`/admin/reviews/${id}`, changes);
   return res.data.data;
 };

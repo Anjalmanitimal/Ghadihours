@@ -1,6 +1,7 @@
 import { Response } from "express";
 import Order from "../models/Order";
 import User from "../models/User";
+import Review from "../models/Review";
 import { AuthRequest } from "../middleware/authMiddleware";
 
 const PENDING_STATUSES = ["Order Placed", "Processing"] as const;
@@ -108,6 +109,44 @@ export const getAllCustomers = async (
     });
 
     res.json({ success: true, count: customers.length, data: customers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};
+
+// @desc  All reviews regardless of status — moderation queue
+// @route GET /api/admin/reviews
+export const getAllReviews = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const reviews = await Review.find().sort({ createdAt: -1 });
+    res.json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};
+
+// @desc  Approve, hide, or toggle the verified badge on a review
+// @route PUT /api/admin/reviews/:id
+export const updateReview = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { status, verifiedPurchase } = req.body;
+    const update: Partial<{ status: string; verifiedPurchase: boolean }> = {};
+    if (status !== undefined) update.status = status;
+    if (verifiedPurchase !== undefined) update.verifiedPurchase = verifiedPurchase;
+
+    const review = await Review.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!review) {
+      res.status(404).json({ success: false, message: "Review not found" });
+      return;
+    }
+
+    res.json({ success: true, data: review });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }

@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IReview extends Document {
   product: mongoose.Types.ObjectId;
+  user?: mongoose.Types.ObjectId;
   reviewerName: string;
   location?: string;
   rating: number;
@@ -9,6 +10,7 @@ export interface IReview extends Document {
   text: string;
   verifiedPurchase: boolean;
   helpfulCount: number;
+  status: "pending" | "approved" | "hidden";
 }
 
 const reviewSchema = new Schema<IReview>(
@@ -17,6 +19,10 @@ const reviewSchema = new Schema<IReview>(
       type: Schema.Types.ObjectId,
       ref: "Product",
       required: true,
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     reviewerName: { type: String, required: true },
     location: { type: String },
@@ -29,6 +35,11 @@ const reviewSchema = new Schema<IReview>(
     text: { type: String, required: true },
     verifiedPurchase: { type: Boolean, default: true },
     helpfulCount: { type: Number, default: 0 },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "hidden"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );
