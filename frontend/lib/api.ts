@@ -81,6 +81,22 @@ export const getMe = async (): Promise<IAuthResponse> => {
   return res.data;
 };
 
+export const updateProfile = async (
+  name: string,
+  phone?: string
+): Promise<IAuthResponse> => {
+  const res = await api.put("/auth/profile", { name, phone });
+  return res.data;
+};
+
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string
+): Promise<{ success: boolean; message: string }> => {
+  const res = await api.put("/auth/password", { currentPassword, newPassword });
+  return res.data;
+};
+
 // ── Orders ───────────────────────────────────────────────────────────────────
 export const createOrder = async (
   payload: ICreateOrderPayload

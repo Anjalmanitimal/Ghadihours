@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchMyOrders } from "@/lib/api";
+import { AxiosError } from "axios";
+import { fetchMyOrders, updateProfile, changePassword } from "@/lib/api";
 import { IOrder } from "@/types";
 import {
   Package,
@@ -12,6 +13,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { caseColors, strapColors } from "@/lib/productOptions";
 import WatchVisual from "@/components/ui/WatchVisual";
@@ -28,9 +30,24 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("orders");
-  const [user, setUser] = useState<{ name: string; email: string } | null>(
-    null
-  );
+  const [user, setUser] = useState<{
+    name: string;
+    email: string;
+    phone?: string;
+  } | null>(null);
+  const [profileForm, setProfileForm] = useState({ name: "", phone: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [passwordForm, setPasswordForm] = useState({
+    current: "",
+    next: "",
+    confirm: "",
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{
+    text: string;
+    ok: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -38,7 +55,12 @@ export default function OrdersPage() {
       router.push("/login");
       return;
     }
-    setUser(JSON.parse(savedUser));
+    const parsedUser = JSON.parse(savedUser);
+    setUser(parsedUser);
+    setProfileForm({
+      name: parsedUser.name || "",
+      phone: parsedUser.phone || "",
+    });
 
     fetchMyOrders()
       .then(setOrders)
@@ -46,10 +68,123 @@ export default function OrdersPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
+  const handleSaveProfile = async () => {
+    if (!profileForm.name.trim()) {
+      setProfileMessage("Name can't be empty.");
+      return;
+    }
+    setSavingProfile(true);
+    setProfileMessage(null);
+    try {
+      const res = await updateProfile(profileForm.name.trim(), profileForm.phone.trim());
+      const updatedUser = { ...user, ...res.data };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setProfileMessage("Details updated successfully.");
+    } catch (err) {
+      console.error(err);
+      setProfileMessage("Couldn't update details. Please try again.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/");
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.current || !passwordForm.next) {
+      setPasswordMessage({ text: "Fill in both password fields.", ok: false });
+      return;
+    }
+    if (passwordForm.next.length < 6) {
+      setPasswordMessage({
+        text: "New password must be at least 6 characters.",
+        ok: false,
+      });
+      return;
+    }
+    if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordMessage({ text: "New passwords don't match.", ok: false });
+      return;
+    }
+    setChangingPassword(true);
+    setPasswordMessage(null);
+    try {
+      await changePassword(passwordForm.current, passwordForm.next);
+      setPasswordMessage({ text: "Password updated successfully.", ok: true });
+      setPasswordForm({ current: "", next: "", confirm: "" });
+    } catch (err) {
+      const message =
+        err instanceof AxiosError
+          ? err.response?.data?.message
+          : null;
+      setPasswordMessage({
+        text: message || "Couldn't update password. Please try again.",
+        ok: false,
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const downloadOrderHistory = () => {
+    const win = window.open("", "_blank");
+    if (!win) return;
+
+    const rows = orders
+      .map((order) => {
+        const itemsSummary = order.items
+          .map((item) => `${item.caseColor} · ${item.strapColor} · ${item.size} × ${item.quantity}`)
+          .join("<br/>");
+        return `
+        <tr>
+          <td>#${order.orderNumber}</td>
+          <td>${formatDate(order.createdAt)}</td>
+          <td>${itemsSummary}</td>
+          <td>${order.orderStatus}</td>
+          <td style="text-align:right">NPR ${order.pricing.total.toLocaleString()}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const grandTotal = orders.reduce((sum, o) => sum + o.pricing.total, 0);
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>GhadiHours — Order History</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #111827; padding: 40px; }
+            h1 { font-size: 22px; margin-bottom: 4px; }
+            .muted { color: #6b7280; font-size: 13px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+            th, td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-size: 13px; text-align: left; vertical-align: top; }
+            tfoot td { font-weight: bold; border-top: 2px solid #111827; border-bottom: none; }
+          </style>
+        </head>
+        <body>
+          <h1>GhadiHours</h1>
+          <p class="muted">Order history for ${user?.name} · ${user?.email}</p>
+          <p class="muted">Generated ${new Date().toLocaleDateString("en-NP", { year: "numeric", month: "long", day: "numeric" })}</p>
+          <table>
+            <thead>
+              <tr><th>Order #</th><th>Date</th><th>Items</th><th>Status</th><th style="text-align:right">Total</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+            <tfoot>
+              <tr><td colspan="4">Grand total</td><td style="text-align:right">NPR ${grandTotal.toLocaleString()}</td></tr>
+            </tfoot>
+          </table>
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
   };
 
   const formatDate = (dateStr: string) => {
@@ -320,20 +455,57 @@ export default function OrdersPage() {
                       <label className="block text-sm font-medium text-gray-500 mb-2">
                         Full name
                       </label>
-                      <div className="h-12 border border-gray-200 rounded-xl px-4 flex items-center text-gray-900 text-sm bg-gray-50">
-                        {user?.name}
-                      </div>
+                      <input
+                        type="text"
+                        value={profileForm.name}
+                        onChange={(e) =>
+                          setProfileForm((f) => ({ ...f, name: e.target.value }))
+                        }
+                        className="w-full h-12 border border-gray-200 rounded-xl px-4 flex items-center text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-2">
+                        Phone number
+                      </label>
+                      <input
+                        type="tel"
+                        value={profileForm.phone}
+                        onChange={(e) =>
+                          setProfileForm((f) => ({ ...f, phone: e.target.value }))
+                        }
+                        placeholder="98XXXXXXXX"
+                        className="w-full h-12 border border-gray-200 rounded-xl px-4 flex items-center text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-2">
                         Email address
                       </label>
-                      <div className="h-12 border border-gray-200 rounded-xl px-4 flex items-center text-gray-900 text-sm bg-gray-50">
+                      <div className="h-12 border border-gray-200 rounded-xl px-4 flex items-center text-gray-400 text-sm bg-gray-50 cursor-not-allowed">
                         {user?.email}
                       </div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Email can&apos;t be changed since it&apos;s used to sign in.
+                      </p>
                     </div>
-                    <button className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold text-sm transition-colors">
-                      Update details
+                    {profileMessage && (
+                      <p
+                        className={`text-sm font-medium ${
+                          profileMessage.includes("success")
+                            ? "text-green-600"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {profileMessage}
+                      </p>
+                    )}
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={savingProfile}
+                      className="w-full h-12 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-sm transition-colors"
+                    >
+                      {savingProfile ? "Saving..." : "Update details"}
                     </button>
                   </div>
                 </div>
@@ -342,28 +514,98 @@ export default function OrdersPage() {
 
             {/* Settings tab */}
             {activeTab === "settings" && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              <div className="flex flex-col gap-6">
+                <h2 className="text-2xl font-bold text-gray-900 -mb-2">
                   Settings
                 </h2>
-                <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col gap-4">
-                  {[
-                    "Email notifications",
-                    "Order updates via SMS",
-                    "Marketing emails",
-                  ].map((setting) => (
-                    <div
-                      key={setting}
-                      className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
-                    >
-                      <span className="text-gray-700 text-sm font-medium">
-                        {setting}
-                      </span>
-                      <div className="w-11 h-6 bg-blue-500 rounded-full relative cursor-pointer">
-                        <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1 shadow-sm" />
-                      </div>
+
+                {/* Change password */}
+                <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                  <h3 className="font-bold text-gray-900 mb-5">Change password</h3>
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-2">
+                        Current password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordForm.current}
+                        onChange={(e) =>
+                          setPasswordForm((f) => ({ ...f, current: e.target.value }))
+                        }
+                        className="w-full h-12 border border-gray-200 rounded-xl px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
-                  ))}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-2">
+                        New password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordForm.next}
+                        onChange={(e) =>
+                          setPasswordForm((f) => ({ ...f, next: e.target.value }))
+                        }
+                        className="w-full h-12 border border-gray-200 rounded-xl px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-2">
+                        Confirm new password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordForm.confirm}
+                        onChange={(e) =>
+                          setPasswordForm((f) => ({ ...f, confirm: e.target.value }))
+                        }
+                        className="w-full h-12 border border-gray-200 rounded-xl px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    {passwordMessage && (
+                      <p
+                        className={`text-sm font-medium ${
+                          passwordMessage.ok ? "text-green-600" : "text-red-500"
+                        }`}
+                      >
+                        {passwordMessage.text}
+                      </p>
+                    )}
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="w-full h-12 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-sm transition-colors"
+                    >
+                      {changingPassword ? "Updating..." : "Change password"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Order history download */}
+                <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                  <h3 className="font-bold text-gray-900 mb-1">Order history</h3>
+                  <p className="text-sm text-gray-400 mb-5">
+                    Download a statement of all your orders as a PDF.
+                  </p>
+                  <button
+                    onClick={downloadOrderHistory}
+                    disabled={orders.length === 0}
+                    className="flex items-center gap-2 h-12 px-5 bg-gray-900 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-sm transition-colors"
+                  >
+                    <Download size={16} />
+                    Download order history
+                  </button>
+                </div>
+
+                {/* Sign out */}
+                <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-red-500 hover:text-red-600 font-semibold text-sm"
+                  >
+                    <LogOut size={16} />
+                    Log out
+                  </button>
                 </div>
               </div>
             )}

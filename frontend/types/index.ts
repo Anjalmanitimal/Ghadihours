@@ -92,6 +92,7 @@ export interface IUser {
   _id: string;
   name: string;
   email: string;
+  phone?: string;
   isGuest: boolean;
   isAdmin: boolean;
   token: string;
